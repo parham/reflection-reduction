@@ -1,0 +1,49 @@
+
+{
+	"project" : {
+		"name" : "Reflectivity detection and reduction of thermographic images using image stitching technique and its applications on remote inspection"
+	},
+	"data_source" : {
+		"datasetPath" : "/home/phm/Insync/parham.nooralishahi@gmail.com/Google Drive/Experiments/Image Stitching/exp01_Pond",
+		"fileExtension" : [".tif", ".png", ".jpg", ".JPG"]
+	},
+	"resizing" : {
+		"imgSize" : [600, 800],
+		"resizeMethod" : "nearest"
+	},
+	"matching" : {
+		"transformType" : "projective",
+		"edgeThresh" : 10,
+		"confidence" : 0.99,
+		"inlierRatio" : 0.3,
+		"epsilon" : 1.5,
+		"maskGradThresh" : 0.9,
+		"maskBlur" : 11
+	},
+	"register" : {
+		"smoothEdge": true,
+		"interpolationMethod" : "bilinear",
+		"fillVal" : 0
+	},
+	"blend_mask" : {
+		"edgeMethod" : "Prewitt",
+		"edgeSpread" : 13,
+		"edgeBlur" : 15
+	},
+	"reflection" : {
+		"pyramidLevel" : 3,
+		"pyramidScale" : 0.5,
+		"iteration" : 3,
+		"neighborSize" : 5,
+		"filterSize" : 15,
+		"intersecThreshold" : 0.5
+	},
+	"blending" : {
+		"operation" : "WeightedBlend"
+	}
+}
+
+
+
+
+
