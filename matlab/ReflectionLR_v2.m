@@ -17,7 +17,7 @@ classdef ReflectionLR_v2 < phm.core.phmCore
             obj.reflectionMask = [];
         end
         
-        function [result] = process (obj, frame)
+        function [result] = processImpl(obj, frame, thresh)
             if isempty(obj.reflectionMask)
                 obj.reflectionMask = zeros(size(frame.WarppedFrame));
             else
@@ -34,8 +34,8 @@ classdef ReflectionLR_v2 < phm.core.phmCore
                 tmp(msk == 1) = {[0]};
                 tmp = cell2mat(tmp);
                 tmp(isnan(tmp)) = 0;
-                tmp = tmp .* mask; %mat2gray();
-                intValue = (max(tmp(:)) - min(tmp(:))) * obj.intersecThreshold;
+                tmp = tmp .* mask;
+                intValue = (max(tmp(:)) - min(tmp(:))) * thresh;
                 tmp(tmp < intValue) = 0;
                 tmp = imbinarize(tmp);
                 
@@ -47,9 +47,12 @@ classdef ReflectionLR_v2 < phm.core.phmCore
             tmpCount = obj.reflectionMask;
             tmpCount(tmpCount ~= 0) = 1;
             result = sum(obj.reflectionMask, 3) ./ sum(tmpCount,3);
-            result(isnan(result)) = 0;
+            result(isnan(result)) = 0;            
         end
         
+        function [result] = process (obj, frame)
+            result = obj.processImpl(frame, obj.intersecThreshold);
+        end
     end
 end
 

@@ -26,16 +26,21 @@
 clear;
 clc;
 
-showFootage = true;
+showFootage = false;
 
 %% Load configuration
 progressbar.textprogressbar('Load Configuration: ');
-configPath = sprintf('image_stitching_%s_v2.json', ...
-    phm.utils.phmSystemUtils.getOSUser);
-% configPath = sprintf('image_stitching_%s_v2_exp2.json', ...
-%     phm.utils.phmSystemUtils.getOSUser);
+% configPath = sprintf('image_stitching_%s_v2.json', ...
+%      phm.utils.phmSystemUtils.getOSUser);
+configPath = sprintf('image_stitching_%s_v2_exp2.json', ...
+   phm.utils.phmSystemUtils.getOSUser);
 % configPath = sprintf('image_stitching_%s_v2_exp3.json', ...
 %    phm.utils.phmSystemUtils.getOSUser);
+
+% referenceMask = imread('/home/phm/Pictures/ThermoSense20/expA/reflection_map_expA.bmp');
+% referenceMask(referenceMask ~= 0) = 1;
+% referenceMask = logical(referenceMask);
+
 disp(['Config file: ', configPath]);
 if ~isfile(configPath)
     progressbar.textprogressbar(100);
@@ -82,7 +87,6 @@ progressbar.textprogressbar(' done');
 
 %% Frame processing and matching
 progressbar.textprogressbar('Frame matching step: ');
-figure('Name','Stitching result viewer'); 
 matches = cell(1, length(imgds.Files));
 
 index = 1;
@@ -122,27 +126,39 @@ progressbar.textprogressbar(' done');
 disp('Perform pre-processing steps for the registration to measure the environment configurations');
 [regConfig] = regStep.initialize(matches);
 
-figure;
-progressbar.textprogressbar('Frame registration and blending: ');
-res = [];
-reflectMap = [];
 for index = 1:length(matches)
     matches{index} = regStep.process(matches{index}, regConfig);
     matches{index} = blendMaskStep.process(matches{index});
-    reflectMap = refStep.process(matches{index});
-    %res = blendStep.process(matches{index});
-    if showFootage
-        montage({matches{index}.WarppedFrame, ... 
-            matches{index}.WarppedMask, ...
-            matches{index}.BlendMask, ...
-            reflectMap});
-        pause(10^-3);
-    end
-    progressbar.textprogressbar((index / length(matches)) * 100.0);
 end
-progressbar.textprogressbar(' done');
 
-%% Final Blend
-[result, resMask] = refBlender.process(matches, reflectMap);
-figure;
-montage({result, resMask});
+progressbar.textprogressbar('Frame registration and blending: ');
+index = 1;
+
+resarr = {};
+for rate = 0.1:0.05:0.9
+    res = [];
+    reflectMap = [];
+    progressbar.textprogressbar((index / length(matches)) * 100.0);
+    for ind = 1:length(matches)
+        reflectMap = refStep.processImpl(matches{ind}, rate);
+        disp(['Index:', num2str(ind)]);
+    end
+    reflectMap(reflectMap ~= 0) = 1;
+    reflectMap = logical(reflectMap);
+    
+%     tmp = reflectMap .* referenceMask;
+%     accu = (sum(tmp,'all') / sum(referenceMask,'all')) * 100.0;
+%     
+%     resarr(index).rate = rate;
+%     resarr(index).refPixCount = sum(referenceMask,'all');
+%     resarr(index).accuracy = accu;
+    
+    %% Final Blend
+    [result, resMask] = refBlender.process(matches, reflectMap);
+    imwrite(reflectMap, sprintf('reflection_map_%f.bmp',rate));
+    imwrite(result, sprintf('reflection_result_%f.bmp',rate));
+    refStep.reset();
+    index = index + 1;
+end
+
+progressbar.textprogressbar(' done');
